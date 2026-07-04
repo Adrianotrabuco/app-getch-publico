@@ -3,7 +3,7 @@ const oldStorageKey = 'gtech-tarefas-obras-v1';
 const inventoryStorageKey = 'gtech-inventario-v1';
 const dbName = 'gtech-tarefas-obras-arquivos';
 const dbStore = 'midias';
-const appVersion = '21-responsavel-automatico';
+const appVersion = '22-evidencias-no-app';
 const sessionKey = 'gtech-sessao-v1';
 const cloudTasksTable = 'tarefas_obras';
 const cloudUsersTable = 'usuarios_app';
@@ -947,7 +947,6 @@ async function render() {
     reviewCheckbox.checked = task.reviewed;
     reviewCheckbox.addEventListener('change', () => updateReview(task.id, reviewCheckbox.checked));
 
-    card.querySelector('.share-btn').addEventListener('click', () => shareEvidence(task.id));
     card.querySelector('.cloud-btn').addEventListener('click', () => uploadEvidenceToCloud(task.id));
     const editBtn = card.querySelector('.edit-btn');
     const deleteBtn = card.querySelector('.delete-btn');
@@ -1192,8 +1191,8 @@ async function createEvidenceBox(task, stage) {
 
   const previews = document.createElement('div');
   previews.className = 'media-preview-grid';
-  previews.appendChild(await createMediaPreview(data.photoId, 'photo', data.photoName));
-  previews.appendChild(await createMediaPreview(data.videoId, 'video', data.videoName));
+  previews.appendChild(await createMediaPreview(data.photoId, 'photo', data.photoName, data.photoCloudPath));
+  previews.appendChild(await createMediaPreview(data.videoId, 'video', data.videoName, data.videoCloudPath));
   box.appendChild(previews);
 
   const uploadRow = document.createElement('div');
@@ -1247,31 +1246,21 @@ async function createExtraPreview(taskIdValue, item) {
 
   const record = await getMedia(item.id);
   if (!record?.blob) {
-    wrap.innerHTML = '<span>Arquivo nao encontrado</span>';
+    const cloudUrl = await getCloudMediaUrl(item.cloudPath);
+    if (cloudUrl) {
+      appendMediaElement(wrap, cloudUrl, item.type, item.name || 'Arquivo extra');
+      appendDownloadLink(wrap, cloudUrl, item.name || 'arquivo-extra');
+    } else {
+      wrap.innerHTML = '<span>Arquivo nao encontrado</span>';
+    }
     return wrap;
   }
 
   const url = URL.createObjectURL(record.blob);
   mediaUrls.push(url);
 
-  if (record.type?.startsWith('image/')) {
-    const image = document.createElement('img');
-    image.src = url;
-    image.alt = item.name || 'Foto extra';
-    wrap.appendChild(image);
-  } else if (record.type?.startsWith('video/')) {
-    const video = document.createElement('video');
-    video.src = url;
-    video.controls = true;
-    video.preload = 'metadata';
-    wrap.appendChild(video);
-  } else {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = item.name || 'arquivo-extra';
-    link.textContent = 'Baixar arquivo';
-    wrap.appendChild(link);
-  }
+  appendMediaElement(wrap, url, record.type, item.name || 'Arquivo extra');
+  appendDownloadLink(wrap, url, item.name || 'arquivo-extra');
 
   const caption = document.createElement('small');
   caption.textContent = item.name || 'Arquivo extra';
@@ -1287,41 +1276,75 @@ async function createExtraPreview(taskIdValue, item) {
   return wrap;
 }
 
-async function createMediaPreview(mediaId, type, name) {
+async function createMediaPreview(mediaId, type, name, cloudPath = '') {
   const wrap = document.createElement('div');
   wrap.className = 'media-preview';
 
-  if (!mediaId) {
+  if (!mediaId && !cloudPath) {
     wrap.innerHTML = `<span>${type === 'photo' ? 'Foto pendente' : 'Video pendente'}</span>`;
     return wrap;
   }
 
-  const record = await getMedia(mediaId);
+  const record = mediaId ? await getMedia(mediaId) : null;
   if (!record?.blob) {
-    wrap.innerHTML = `<span>Arquivo nao encontrado</span>`;
+    const cloudUrl = await getCloudMediaUrl(cloudPath);
+    if (cloudUrl) {
+      appendMediaElement(wrap, cloudUrl, type === 'photo' ? 'image/*' : 'video/*', name || 'Arquivo anexado');
+      appendDownloadLink(wrap, cloudUrl, name || 'evidencia');
+    } else {
+      wrap.innerHTML = `<span>Arquivo nao encontrado</span>`;
+    }
     return wrap;
   }
 
   const url = URL.createObjectURL(record.blob);
   mediaUrls.push(url);
 
-  if (type === 'photo') {
-    const image = document.createElement('img');
-    image.src = url;
-    image.alt = name || 'Foto da etapa';
-    wrap.appendChild(image);
-  } else {
-    const video = document.createElement('video');
-    video.src = url;
-    video.controls = true;
-    video.preload = 'metadata';
-    wrap.appendChild(video);
-  }
+  appendMediaElement(wrap, url, record.type || (type === 'photo' ? 'image/*' : 'video/*'), name || 'Arquivo anexado');
+  appendDownloadLink(wrap, url, name || 'evidencia');
 
   const caption = document.createElement('small');
   caption.textContent = name || 'Arquivo anexado';
   wrap.appendChild(caption);
   return wrap;
+}
+
+function appendMediaElement(wrap, url, mimeType, name) {
+  if (mimeType?.startsWith('image/') || mimeType === 'image/*') {
+    const image = document.createElement('img');
+    image.src = url;
+    image.alt = name || 'Imagem';
+    wrap.appendChild(image);
+    return;
+  }
+
+  if (mimeType?.startsWith('video/') || mimeType === 'video/*') {
+    const video = document.createElement('video');
+    video.src = url;
+    video.controls = true;
+    video.preload = 'metadata';
+    wrap.appendChild(video);
+    return;
+  }
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name || 'arquivo';
+  link.textContent = 'Abrir arquivo';
+  link.target = '_blank';
+  link.rel = 'noopener';
+  wrap.appendChild(link);
+}
+
+function appendDownloadLink(wrap, url, name) {
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name || 'evidencia';
+  link.target = '_blank';
+  link.rel = 'noopener';
+  link.className = 'media-download';
+  link.textContent = 'Baixar';
+  wrap.appendChild(link);
 }
 
 function createUploadLabel(text, accept, capture, onFile, multiple = false) {
@@ -1346,6 +1369,10 @@ function createUploadLabel(text, accept, capture, onFile, multiple = false) {
 
 async function saveEvidenceFile(taskIdValue, stageKey, kind, file) {
   const id = crypto.randomUUID();
+  const task = getExistingTask(taskIdValue);
+  const stage = stages.find((item) => item.key === stageKey);
+  const cloud = task ? await uploadEvidenceFileToCloud(task, file, stage?.label || stageKey, kind, id) : {};
+
   await putMedia({
     id,
     blob: file,
@@ -1361,7 +1388,10 @@ async function saveEvidenceFile(taskIdValue, stageKey, kind, file) {
       [stageKey]: {
         ...task.evidence[stageKey],
         [`${kind}Id`]: id,
-        [`${kind}Name`]: file.name
+        [`${kind}Name`]: file.name,
+        [`${kind}CloudPath`]: cloud.path || '',
+        [`${kind}CloudName`]: cloud.name || file.name,
+        [`${kind}CloudType`]: cloud.type || file.type
       }
     };
     return { ...task, evidence };
@@ -1381,6 +1411,9 @@ async function saveEvidenceFile(taskIdValue, stageKey, kind, file) {
 
 async function saveExtraEvidenceFile(taskIdValue, file, kind) {
   const id = crypto.randomUUID();
+  const task = getExistingTask(taskIdValue);
+  const cloud = task ? await uploadEvidenceFileToCloud(task, file, 'extra', kind, id) : {};
+
   await putMedia({
     id,
     blob: file,
@@ -1399,6 +1432,9 @@ async function saveExtraEvidenceFile(taskIdValue, file, kind) {
         name: file.name,
         type: file.type,
         kind,
+        cloudPath: cloud.path || '',
+        cloudName: cloud.name || file.name,
+        cloudType: cloud.type || file.type,
         savedAt: new Date().toISOString()
       }
     ];
@@ -1424,6 +1460,9 @@ async function saveExtraEvidenceFiles(taskIdValue, files, kind) {
   for (const file of files) {
     const id = crypto.randomUUID();
     const savedAt = new Date().toISOString();
+    const task = getExistingTask(taskIdValue);
+    const cloud = task ? await uploadEvidenceFileToCloud(task, file, 'extra', kind, id) : {};
+
     await putMedia({
       id,
       blob: file,
@@ -1437,6 +1476,9 @@ async function saveExtraEvidenceFiles(taskIdValue, files, kind) {
       name: file.name,
       type: file.type,
       kind,
+      cloudPath: cloud.path || '',
+      cloudName: cloud.name || file.name,
+      cloudType: cloud.type || file.type,
       savedAt
     });
   }
@@ -1462,6 +1504,54 @@ async function saveExtraEvidenceFiles(taskIdValue, files, kind) {
     }
   }
   render();
+}
+
+async function uploadEvidenceFileToCloud(task, file, stageLabel, kind, id) {
+  if (!supabaseClient) return {};
+
+  if (file.size > maxCloudFileSize) {
+    alert(`O arquivo "${file.name}" foi salvo neste aparelho, mas esta muito grande para sincronizar na nuvem.`);
+    return {};
+  }
+
+  try {
+    const fileName = `${id}-${buildFileName(task, stageLabel, kind, file.name)}`;
+    const path = buildCloudPath(task, fileName);
+    const { error } = await supabaseClient.storage
+      .from(supabaseBucket)
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: file.type || undefined
+      });
+
+    if (error) throw error;
+
+    return {
+      path,
+      name: fileName,
+      type: file.type || ''
+    };
+  } catch (error) {
+    alert(`Arquivo salvo neste aparelho, mas nao sincronizou para outros celulares.\n\n${error.message || error}`);
+    return {};
+  }
+}
+
+async function getCloudMediaUrl(path) {
+  if (!path || !supabaseClient) return '';
+
+  try {
+    const { data, error } = await supabaseClient.storage
+      .from(supabaseBucket)
+      .createSignedUrl(path, 60 * 60);
+
+    if (error) throw error;
+    return data?.signedUrl || '';
+  } catch (error) {
+    console.warn('Falha ao gerar link da evidencia', error);
+    return '';
+  }
 }
 
 async function removeExtraEvidence(taskIdValue, mediaId) {
@@ -1571,38 +1661,75 @@ async function uploadEvidenceToCloud(id) {
     return;
   }
 
-  const files = await buildEvidenceFiles(task);
-  if (!files.length) {
+  if (!hasAnyEvidence(task)) {
     alert('Ainda nao existem fotos ou videos nesta tarefa.');
     return;
   }
 
   if (!requireExecutionDescription(task)) return;
 
-  const tooLarge = files.find((file) => file.size > maxCloudFileSize);
-  if (tooLarge) {
-    alert(`O arquivo "${tooLarge.name}" esta muito grande para o envio gratuito.\n\nGrave videos curtos, de ate 10 ou 20 segundos, e tente novamente.`);
-    return;
-  }
-
-  const confirmed = confirm(`Enviar ${files.length} arquivo(s) para a nuvem e arquivar no Supabase?`);
+  const confirmed = confirm('Sincronizar as evidencias desta tarefa para o responsavel ver e baixar pelo app?');
   if (!confirmed) return;
 
   try {
-    for (const file of files) {
-      const path = buildCloudPath(task, file.name);
-      const { error } = await supabaseClient.storage
-        .from(supabaseBucket)
-        .upload(path, file, {
-          cacheControl: '3600',
-          upsert: true,
-          contentType: file.type || undefined
-        });
+    let updatedTask = task;
 
-      if (error) throw error;
+    for (const stage of stages) {
+      for (const kind of ['photo', 'video']) {
+        const evidenceItem = updatedTask.evidence[stage.key] || {};
+        const mediaId = evidenceItem[`${kind}Id`];
+        const cloudPath = evidenceItem[`${kind}CloudPath`];
+        if (!mediaId || cloudPath) continue;
+
+        const record = await getMedia(mediaId);
+        if (!record?.blob) continue;
+
+        const file = new File([record.blob], record.name || `${kind}-${stage.key}`, { type: record.type || record.blob.type });
+        const cloud = await uploadEvidenceFileToCloud(updatedTask, file, stage.label, kind, mediaId);
+        updatedTask = {
+          ...updatedTask,
+          evidence: {
+            ...updatedTask.evidence,
+            [stage.key]: {
+              ...evidenceItem,
+              [`${kind}CloudPath`]: cloud.path || '',
+              [`${kind}CloudName`]: cloud.name || record.name || '',
+              [`${kind}CloudType`]: cloud.type || record.type || ''
+            }
+          }
+        };
+      }
     }
 
-    alert('Evidencias enviadas para a nuvem com sucesso.');
+    const extraEvidence = [];
+    for (const item of updatedTask.extraEvidence || []) {
+      if (item.cloudPath) {
+        extraEvidence.push(item);
+        continue;
+      }
+
+      const record = await getMedia(item.id);
+      if (!record?.blob) {
+        extraEvidence.push(item);
+        continue;
+      }
+
+      const file = new File([record.blob], record.name || item.name || 'extra', { type: record.type || record.blob.type });
+      const cloud = await uploadEvidenceFileToCloud(updatedTask, file, 'extra', item.kind || 'arquivo-extra', item.id);
+      extraEvidence.push({
+        ...item,
+        cloudPath: cloud.path || '',
+        cloudName: cloud.name || item.name || '',
+        cloudType: cloud.type || item.type || ''
+      });
+    }
+
+    updatedTask = { ...updatedTask, extraEvidence };
+    tasks = tasks.map((current) => current.id === id ? updatedTask : current);
+    persist();
+    await saveTaskToCloud(updatedTask);
+    render();
+    alert('Evidencias sincronizadas. O responsavel ja pode ver e baixar pelo app.');
   } catch (error) {
     const failedToFetch = String(error.message || error).toLowerCase().includes('failed to fetch');
     const details = [

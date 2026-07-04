@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="app-icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="app-icon-192.png">
-  <link rel="manifest" href="manifest.json?v=21">
-  <link rel="stylesheet" href="styles.css?v=21">
+  <link rel="manifest" href="manifest.json?v=22">
+  <link rel="stylesheet" href="styles.css?v=22">
 </head>
 <body>
   <section class="login-screen" id="loginScreen" aria-labelledby="loginTitle">
@@ -319,8 +319,7 @@
           <span>Conferido</span>
         </label>
         <div class="card-actions">
-          <button class="text-action share-btn" title="Enviar para o responsavel" aria-label="Enviar para o responsavel">Enviar para responsavel</button>
-          <button class="text-action cloud-btn" title="Enviar fotos e videos para a nuvem" aria-label="Enviar fotos e videos para a nuvem">Enviar para nuvem</button>
+          <button class="text-action cloud-btn" title="Sincronizar fotos e videos no app" aria-label="Sincronizar fotos e videos no app">Sincronizar evidencias</button>
           <button class="small edit-btn" title="Editar tarefa" aria-label="Editar tarefa">E</button>
           <button class="small delete-btn" title="Excluir tarefa" aria-label="Excluir tarefa">X</button>
         </div>
@@ -329,8 +328,8 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=21"></script>
-  <script src="app.js?v=21"></script>
+  <script src="supabase-config.js?v=22"></script>
+  <script src="app.js?v=22"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');

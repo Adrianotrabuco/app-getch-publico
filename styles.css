@@ -1012,6 +1012,18 @@ textarea:focus {
   font-weight: 900;
 }
 
+.media-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  border-top: 1px solid var(--line);
+  color: var(--brand-dark);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
 .remove-extra {
   min-height: 28px;
   border: 0;
