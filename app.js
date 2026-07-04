@@ -3,7 +3,7 @@ const oldStorageKey = 'gtech-tarefas-obras-v1';
 const inventoryStorageKey = 'gtech-inventario-v1';
 const dbName = 'gtech-tarefas-obras-arquivos';
 const dbStore = 'midias';
-const appVersion = '22-evidencias-no-app';
+const appVersion = '23-abrir-compartilhar-evidencias';
 const sessionKey = 'gtech-sessao-v1';
 const cloudTasksTable = 'tarefas_obras';
 const cloudUsersTable = 'usuarios_app';
@@ -1249,7 +1249,7 @@ async function createExtraPreview(taskIdValue, item) {
     const cloudUrl = await getCloudMediaUrl(item.cloudPath);
     if (cloudUrl) {
       appendMediaElement(wrap, cloudUrl, item.type, item.name || 'Arquivo extra');
-      appendDownloadLink(wrap, cloudUrl, item.name || 'arquivo-extra');
+      appendMediaActions(wrap, cloudUrl, item.name || 'arquivo-extra');
     } else {
       wrap.innerHTML = '<span>Arquivo nao encontrado</span>';
     }
@@ -1260,7 +1260,7 @@ async function createExtraPreview(taskIdValue, item) {
   mediaUrls.push(url);
 
   appendMediaElement(wrap, url, record.type, item.name || 'Arquivo extra');
-  appendDownloadLink(wrap, url, item.name || 'arquivo-extra');
+  appendMediaActions(wrap, url, item.name || 'arquivo-extra');
 
   const caption = document.createElement('small');
   caption.textContent = item.name || 'Arquivo extra';
@@ -1290,7 +1290,7 @@ async function createMediaPreview(mediaId, type, name, cloudPath = '') {
     const cloudUrl = await getCloudMediaUrl(cloudPath);
     if (cloudUrl) {
       appendMediaElement(wrap, cloudUrl, type === 'photo' ? 'image/*' : 'video/*', name || 'Arquivo anexado');
-      appendDownloadLink(wrap, cloudUrl, name || 'evidencia');
+      appendMediaActions(wrap, cloudUrl, name || 'evidencia');
     } else {
       wrap.innerHTML = `<span>Arquivo nao encontrado</span>`;
     }
@@ -1301,7 +1301,7 @@ async function createMediaPreview(mediaId, type, name, cloudPath = '') {
   mediaUrls.push(url);
 
   appendMediaElement(wrap, url, record.type || (type === 'photo' ? 'image/*' : 'video/*'), name || 'Arquivo anexado');
-  appendDownloadLink(wrap, url, name || 'evidencia');
+  appendMediaActions(wrap, url, name || 'evidencia');
 
   const caption = document.createElement('small');
   caption.textContent = name || 'Arquivo anexado';
@@ -1336,15 +1336,44 @@ function appendMediaElement(wrap, url, mimeType, name) {
   wrap.appendChild(link);
 }
 
-function appendDownloadLink(wrap, url, name) {
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = name || 'evidencia';
-  link.target = '_blank';
-  link.rel = 'noopener';
-  link.className = 'media-download';
-  link.textContent = 'Baixar';
-  wrap.appendChild(link);
+function appendMediaActions(wrap, url, name) {
+  const actions = document.createElement('div');
+  actions.className = 'media-actions';
+
+  const open = document.createElement('a');
+  open.href = url;
+  open.target = '_blank';
+  open.rel = 'noopener';
+  open.className = 'media-action-link';
+  open.textContent = 'Abrir';
+  actions.appendChild(open);
+
+  const share = document.createElement('button');
+  share.type = 'button';
+  share.className = 'media-action-link';
+  share.textContent = 'Compartilhar';
+  share.addEventListener('click', async () => {
+    const title = name || 'evidencia';
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text: title, url });
+        return;
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('Link copiado. Abra no navegador para salvar o arquivo.');
+    } catch {
+      prompt('Copie este link para abrir ou salvar:', url);
+    }
+  });
+  actions.appendChild(share);
+
+  wrap.appendChild(actions);
 }
 
 function createUploadLabel(text, accept, capture, onFile, multiple = false) {

@@ -1012,16 +1012,28 @@ textarea:focus {
   font-weight: 900;
 }
 
-.media-download {
+.media-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+}
+
+.media-action-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 28px;
-  border-top: 1px solid var(--line);
+  min-height: 30px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: #ffffff;
   color: var(--brand-dark);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 900;
   text-decoration: none;
+}
+
+.media-action-link:last-child {
+  border-right: 0;
 }
 
 .remove-extra {
