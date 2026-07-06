@@ -3,7 +3,7 @@ const oldStorageKey = 'gtech-tarefas-obras-v1';
 const inventoryStorageKey = 'gtech-inventario-v1';
 const dbName = 'gtech-tarefas-obras-arquivos';
 const dbStore = 'midias';
-const appVersion = '23-abrir-compartilhar-evidencias';
+const appVersion = '24-tarefa-audio-video';
 const sessionKey = 'gtech-sessao-v1';
 const cloudTasksTable = 'tarefas_obras';
 const cloudUsersTable = 'usuarios_app';
@@ -72,6 +72,8 @@ const locationInput = document.querySelector('#location');
 const dueDate = document.querySelector('#dueDate');
 const priority = document.querySelector('#priority');
 const notes = document.querySelector('#notes');
+const taskInstructionAudio = document.querySelector('#taskInstructionAudio');
+const taskInstructionVideo = document.querySelector('#taskInstructionVideo');
 const taskList = document.querySelector('#taskList');
 const statsGrid = document.querySelector('#statsGrid');
 const searchInput = document.querySelector('#searchInput');
@@ -135,6 +137,11 @@ document.querySelector('#printBtn').addEventListener('click', () => window.print
 document.querySelector('#exportBtn').addEventListener('click', exportBackup);
 document.querySelector('#importFile').addEventListener('change', importBackup);
 logoutBtn.addEventListener('click', logout);
+document.addEventListener('click', (event) => {
+  if (event.target?.matches?.('[data-close-media], #mediaModalClose')) {
+    closeMediaModal();
+  }
+});
 
 document.querySelectorAll('.filter').forEach((button) => {
   button.addEventListener('click', () => {
@@ -589,7 +596,8 @@ function taskToRow(task) {
     evidence: {
       ...task.evidence,
       _extras: task.extraEvidence || [],
-      _executionDescription: task.executionDescription || ''
+      _executionDescription: task.executionDescription || '',
+      _instructionMedia: task.instructionMedia || createEmptyInstructionMedia()
     },
     reviewed: task.reviewed,
     reviewed_by: task.reviewedBy,
@@ -613,6 +621,7 @@ function rowToTask(row) {
     evidence: row.evidence,
     extraEvidence: row.extra_evidence || row.evidence?._extras || [],
     executionDescription: row.evidence?._executionDescription || '',
+    instructionMedia: row.evidence?._instructionMedia || {},
     reviewed: row.reviewed,
     reviewedBy: row.reviewed_by,
     reviewedAt: row.reviewed_at,
@@ -659,6 +668,19 @@ function createEmptyEvidence() {
   }, {});
 }
 
+function createEmptyInstructionMedia() {
+  return {
+    audioId: '',
+    audioName: '',
+    audioCloudPath: '',
+    audioCloudType: '',
+    videoId: '',
+    videoName: '',
+    videoCloudPath: '',
+    videoCloudType: ''
+  };
+}
+
 function normalizeTask(task) {
   const evidence = createEmptyEvidence();
   stages.forEach((stage) => {
@@ -683,6 +705,10 @@ function normalizeTask(task) {
     evidence,
     extraEvidence: Array.isArray(task.extraEvidence) ? task.extraEvidence : [],
     executionDescription: task.executionDescription || '',
+    instructionMedia: {
+      ...createEmptyInstructionMedia(),
+      ...(task.instructionMedia || {})
+    },
     reviewed: Boolean(task.reviewed),
     reviewedBy: task.reviewedBy || '',
     reviewedAt: task.reviewedAt || '',
@@ -723,11 +749,20 @@ async function saveTask(event) {
     evidence: existing ? existing.evidence : createEmptyEvidence(),
     extraEvidence: existing ? existing.extraEvidence || [] : [],
     executionDescription: existing ? existing.executionDescription || '' : '',
+    instructionMedia: existing ? existing.instructionMedia || createEmptyInstructionMedia() : createEmptyInstructionMedia(),
     reviewed: existing ? existing.reviewed : false,
     reviewedBy: existing ? existing.reviewedBy : '',
     reviewedAt: existing ? existing.reviewedAt : '',
     createdAt: existing ? existing.createdAt : new Date().toISOString()
   };
+
+  if (taskInstructionAudio.files?.[0]) {
+    payload.instructionMedia = await saveInstructionMediaFile(payload, taskInstructionAudio.files[0], 'audio');
+  }
+
+  if (taskInstructionVideo.files?.[0]) {
+    payload.instructionMedia = await saveInstructionMediaFile(payload, taskInstructionVideo.files[0], 'video');
+  }
 
   if (taskId.value) {
     tasks = tasks.map((task) => task.id === taskId.value ? payload : task);
@@ -822,6 +857,8 @@ async function saveInventoryItem(event) {
 function clearForm() {
   form.reset();
   taskId.value = '';
+  taskInstructionAudio.value = '';
+  taskInstructionVideo.value = '';
   saveBtn.textContent = 'Salvar tarefa';
   if (currentUser?.role === 'funcionario') {
     employee.value = currentUser.name;
@@ -885,6 +922,8 @@ async function render() {
       task.location,
       task.priority,
       task.notes,
+      task.instructionMedia?.audioName,
+      task.instructionMedia?.videoName,
       task.status
     ].join(' ').toLowerCase();
 
@@ -909,6 +948,7 @@ async function render() {
     card.querySelector('.task-meta').textContent = `${task.employee} - ${task.site}`;
     card.querySelector('.task-notes').textContent = task.notes || 'Sem observacoes adicionais.';
     card.querySelector('.task-info').textContent = buildInfoLine(task);
+    card.querySelector('.task-instructions').replaceWith(await createInstructionBox(task));
     const summary = card.querySelector('.evidence-summary');
     const missing = missingEvidenceItems(task);
     summary.textContent = evidenceSummary(task);
@@ -948,6 +988,13 @@ async function render() {
     reviewCheckbox.addEventListener('change', () => updateReview(task.id, reviewCheckbox.checked));
 
     card.querySelector('.cloud-btn').addEventListener('click', () => uploadEvidenceToCloud(task.id));
+    const cloudBtn = card.querySelector('.cloud-btn');
+    if (currentUser.role === 'funcionario') {
+      cloudBtn.textContent = 'Salvar e enviar';
+      cloudBtn.title = 'Salvar evidencias e enviar ao responsavel';
+      cloudBtn.setAttribute('aria-label', 'Salvar evidencias e enviar ao responsavel');
+      statusSelect.hidden = true;
+    }
     const editBtn = card.querySelector('.edit-btn');
     const deleteBtn = card.querySelector('.delete-btn');
     editBtn.addEventListener('click', () => editTask(task.id));
@@ -1179,6 +1226,40 @@ function renderInventoryCard(item) {
   `;
 }
 
+async function createInstructionBox(task) {
+  const box = document.createElement('section');
+  box.className = 'task-instructions';
+
+  const media = task.instructionMedia || createEmptyInstructionMedia();
+  if (!media.audioId && !media.audioCloudPath && !media.videoId && !media.videoCloudPath) {
+    box.hidden = true;
+    return box;
+  }
+
+  const heading = document.createElement('div');
+  heading.className = 'extra-heading';
+  heading.innerHTML = '<div><strong>Instrucao do responsavel</strong><span>Audio ou video para entender a tarefa</span></div>';
+  box.appendChild(heading);
+
+  const grid = document.createElement('div');
+  grid.className = 'instruction-media-grid';
+
+  if (media.audioId || media.audioCloudPath) {
+    grid.appendChild(await createInstructionPreview(media.audioId, 'audio', media.audioName, media.audioCloudPath, media.audioCloudType));
+  }
+
+  if (media.videoId || media.videoCloudPath) {
+    grid.appendChild(await createInstructionPreview(media.videoId, 'video', media.videoName, media.videoCloudPath, media.videoCloudType));
+  }
+
+  box.appendChild(grid);
+  return box;
+}
+
+async function createInstructionPreview(mediaId, kind, name, cloudPath, cloudType) {
+  return createMediaPreview(mediaId, kind, name, cloudPath, cloudType);
+}
+
 async function createEvidenceBox(task, stage) {
   const data = task.evidence[stage.key] || {};
   const box = document.createElement('section');
@@ -1276,7 +1357,7 @@ async function createExtraPreview(taskIdValue, item) {
   return wrap;
 }
 
-async function createMediaPreview(mediaId, type, name, cloudPath = '') {
+async function createMediaPreview(mediaId, type, name, cloudPath = '', cloudType = '') {
   const wrap = document.createElement('div');
   wrap.className = 'media-preview';
 
@@ -1289,7 +1370,7 @@ async function createMediaPreview(mediaId, type, name, cloudPath = '') {
   if (!record?.blob) {
     const cloudUrl = await getCloudMediaUrl(cloudPath);
     if (cloudUrl) {
-      appendMediaElement(wrap, cloudUrl, type === 'photo' ? 'image/*' : 'video/*', name || 'Arquivo anexado');
+      appendMediaElement(wrap, cloudUrl, cloudType || mediaKindToMime(type), name || 'Arquivo anexado');
       appendMediaActions(wrap, cloudUrl, name || 'evidencia');
     } else {
       wrap.innerHTML = `<span>Arquivo nao encontrado</span>`;
@@ -1300,7 +1381,7 @@ async function createMediaPreview(mediaId, type, name, cloudPath = '') {
   const url = URL.createObjectURL(record.blob);
   mediaUrls.push(url);
 
-  appendMediaElement(wrap, url, record.type || (type === 'photo' ? 'image/*' : 'video/*'), name || 'Arquivo anexado');
+  appendMediaElement(wrap, url, record.type || mediaKindToMime(type), name || 'Arquivo anexado');
   appendMediaActions(wrap, url, name || 'evidencia');
 
   const caption = document.createElement('small');
@@ -1327,6 +1408,15 @@ function appendMediaElement(wrap, url, mimeType, name) {
     return;
   }
 
+  if (mimeType?.startsWith('audio/') || mimeType === 'audio/*') {
+    const audio = document.createElement('audio');
+    audio.src = url;
+    audio.controls = true;
+    audio.preload = 'metadata';
+    wrap.appendChild(audio);
+    return;
+  }
+
   const link = document.createElement('a');
   link.href = url;
   link.download = name || 'arquivo';
@@ -1336,9 +1426,23 @@ function appendMediaElement(wrap, url, mimeType, name) {
   wrap.appendChild(link);
 }
 
+function mediaKindToMime(type) {
+  if (type === 'photo') return 'image/*';
+  if (type === 'video') return 'video/*';
+  if (type === 'audio') return 'audio/*';
+  return '';
+}
+
 function appendMediaActions(wrap, url, name) {
   const actions = document.createElement('div');
   actions.className = 'media-actions';
+
+  const expand = document.createElement('button');
+  expand.type = 'button';
+  expand.className = 'media-action-link';
+  expand.textContent = 'Ampliar';
+  expand.addEventListener('click', () => openMediaModal(url, name, wrap));
+  actions.appendChild(expand);
 
   const open = document.createElement('a');
   open.href = url;
@@ -1347,6 +1451,13 @@ function appendMediaActions(wrap, url, name) {
   open.className = 'media-action-link';
   open.textContent = 'Abrir';
   actions.appendChild(open);
+
+  const download = document.createElement('button');
+  download.type = 'button';
+  download.className = 'media-action-link';
+  download.textContent = 'Baixar';
+  download.addEventListener('click', () => downloadMediaUrl(url, name || 'evidencia'));
+  actions.appendChild(download);
 
   const share = document.createElement('button');
   share.type = 'button';
@@ -1374,6 +1485,77 @@ function appendMediaActions(wrap, url, name) {
   actions.appendChild(share);
 
   wrap.appendChild(actions);
+}
+
+function openMediaModal(url, name, sourceWrap) {
+  const modal = document.querySelector('#mediaModal');
+  const body = document.querySelector('#mediaModalBody');
+  const open = document.querySelector('#mediaModalOpen');
+  const download = document.querySelector('#mediaModalDownload');
+  if (!modal || !body || !open || !download) {
+    window.open(url, '_blank', 'noopener');
+    return;
+  }
+
+  body.innerHTML = '';
+  const media = sourceWrap.querySelector('img, video, audio');
+  const type = media?.tagName?.toLowerCase();
+
+  if (type === 'img') {
+    const image = document.createElement('img');
+    image.src = url;
+    image.alt = name || 'Evidencia';
+    body.appendChild(image);
+  } else if (type === 'video') {
+    const video = document.createElement('video');
+    video.src = url;
+    video.controls = true;
+    video.autoplay = false;
+    body.appendChild(video);
+  } else if (type === 'audio') {
+    const audio = document.createElement('audio');
+    audio.src = url;
+    audio.controls = true;
+    body.appendChild(audio);
+  } else {
+    const link = document.createElement('a');
+    link.href = url;
+    link.textContent = 'Abrir arquivo';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    body.appendChild(link);
+  }
+
+  open.href = url;
+  download.onclick = () => downloadMediaUrl(url, name || 'evidencia');
+  modal.hidden = false;
+}
+
+function closeMediaModal() {
+  const modal = document.querySelector('#mediaModal');
+  const body = document.querySelector('#mediaModalBody');
+  if (body) body.innerHTML = '';
+  if (modal) modal.hidden = true;
+}
+
+async function downloadMediaUrl(url, name) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Falha ao baixar arquivo.');
+
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = name || 'evidencia';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  } catch (error) {
+    alert('Nao foi possivel baixar direto. Toque em Abrir e salve pelo navegador do celular.');
+    console.warn('Falha no download direto', error);
+  }
 }
 
 function createUploadLabel(text, accept, capture, onFile, multiple = false) {
@@ -1436,6 +1618,27 @@ async function saveEvidenceFile(taskIdValue, stageKey, kind, file) {
     }
   }
   render();
+}
+
+async function saveInstructionMediaFile(task, file, kind) {
+  const id = crypto.randomUUID();
+  const cloud = await uploadEvidenceFileToCloud(task, file, 'instrucao', kind, id);
+
+  await putMedia({
+    id,
+    blob: file,
+    name: file.name,
+    type: file.type,
+    savedAt: new Date().toISOString()
+  });
+
+  return {
+    ...task.instructionMedia,
+    [`${kind}Id`]: id,
+    [`${kind}Name`]: file.name,
+    [`${kind}CloudPath`]: cloud.path || '',
+    [`${kind}CloudType`]: cloud.type || file.type
+  };
 }
 
 async function saveExtraEvidenceFile(taskIdValue, file, kind) {
@@ -1702,6 +1905,27 @@ async function uploadEvidenceToCloud(id) {
 
   try {
     let updatedTask = task;
+
+    for (const kind of ['audio', 'video']) {
+      const instruction = updatedTask.instructionMedia || createEmptyInstructionMedia();
+      const mediaId = instruction[`${kind}Id`];
+      const cloudPath = instruction[`${kind}CloudPath`];
+      if (!mediaId || cloudPath) continue;
+
+      const record = await getMedia(mediaId);
+      if (!record?.blob) continue;
+
+      const file = new File([record.blob], record.name || `instrucao-${kind}`, { type: record.type || record.blob.type });
+      const cloud = await uploadEvidenceFileToCloud(updatedTask, file, 'instrucao', kind, mediaId);
+      updatedTask = {
+        ...updatedTask,
+        instructionMedia: {
+          ...instruction,
+          [`${kind}CloudPath`]: cloud.path || '',
+          [`${kind}CloudType`]: cloud.type || record.type || ''
+        }
+      };
+    }
 
     for (const stage of stages) {
       for (const kind of ['photo', 'video']) {

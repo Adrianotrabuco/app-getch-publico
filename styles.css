@@ -270,6 +270,16 @@ h1 {
   gap: 14px;
 }
 
+.task-instruction-upload,
+.task-instructions {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7faf9;
+  padding: 12px;
+}
+
 .user-admin-panel {
   display: grid;
   gap: 12px;
@@ -1014,7 +1024,7 @@ textarea:focus {
 
 .media-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   border-top: 1px solid var(--line);
 }
 
@@ -1034,6 +1044,76 @@ textarea:focus {
 
 .media-action-link:last-child {
   border-right: 0;
+}
+
+.instruction-media-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.media-preview audio,
+.extra-preview audio {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  padding: 8px;
+}
+
+.media-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+}
+
+.media-modal[hidden] {
+  display: none;
+}
+
+.media-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.media-modal-panel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 10px;
+  width: min(100%, 920px);
+  max-height: 92vh;
+  border-radius: 8px;
+  background: #111827;
+  padding: 10px;
+}
+
+.media-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.media-modal-body {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  overflow: auto;
+}
+
+.media-modal-body img,
+.media-modal-body video {
+  display: block;
+  max-width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+}
+
+.media-modal-body audio {
+  width: min(100%, 620px);
 }
 
 .remove-extra {
@@ -1230,8 +1310,13 @@ body.is-funcionario .upload-row label {
   .evidence-grid,
   .extra-preview-grid,
   .extra-upload-row,
-  .inventory-items {
+  .inventory-items,
+  .instruction-media-grid {
     grid-template-columns: 1fr;
+  }
+
+  .media-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .form-actions {
