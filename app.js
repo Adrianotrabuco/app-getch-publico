@@ -3,7 +3,7 @@ const oldStorageKey = 'gtech-tarefas-obras-v1';
 const inventoryStorageKey = 'gtech-inventario-v1';
 const dbName = 'gtech-tarefas-obras-arquivos';
 const dbStore = 'midias';
-const appVersion = '25-gravador-audio-tarefa';
+const appVersion = '26-audio-instrucao-nuvem';
 const sessionKey = 'gtech-sessao-v1';
 const cloudTasksTable = 'tarefas_obras';
 const cloudUsersTable = 'usuarios_app';
@@ -130,6 +130,8 @@ inventoryForm.addEventListener('submit', saveInventoryItem);
 clearBtn.addEventListener('click', clearForm);
 recordInstructionAudioBtn.addEventListener('click', startInstructionAudioRecording);
 stopInstructionAudioBtn.addEventListener('click', stopInstructionAudioRecording);
+taskInstructionAudio.addEventListener('change', updateInstructionFileStatus);
+taskInstructionVideo.addEventListener('change', updateInstructionFileStatus);
 clearInventoryBtn.addEventListener('click', clearInventoryForm);
 searchInput.addEventListener('input', render);
 inventorySearchInput.addEventListener('input', renderInventory);
@@ -743,6 +745,11 @@ async function saveTask(event) {
     return;
   }
 
+  if (instructionRecorder && instructionRecorder.state === 'recording') {
+    alert('Toque em Parar antes de salvar a tarefa com audio.');
+    return;
+  }
+
   const existing = taskId.value ? getExistingTask(taskId.value) : null;
   const payload = {
     id: taskId.value || crypto.randomUUID(),
@@ -764,13 +771,18 @@ async function saveTask(event) {
     createdAt: existing ? existing.createdAt : new Date().toISOString()
   };
 
-  const audioFile = recordedInstructionAudioFile || taskInstructionAudio.files?.[0];
-  if (audioFile) {
-    payload.instructionMedia = await saveInstructionMediaFile(payload, audioFile, 'audio');
-  }
+  try {
+    const audioFile = recordedInstructionAudioFile || taskInstructionAudio.files?.[0];
+    if (audioFile) {
+      payload.instructionMedia = await saveInstructionMediaFile(payload, audioFile, 'audio');
+    }
 
-  if (taskInstructionVideo.files?.[0]) {
-    payload.instructionMedia = await saveInstructionMediaFile(payload, taskInstructionVideo.files[0], 'video');
+    if (taskInstructionVideo.files?.[0]) {
+      payload.instructionMedia = await saveInstructionMediaFile(payload, taskInstructionVideo.files[0], 'video');
+    }
+  } catch (error) {
+    alert(`Nao foi possivel enviar a instrucao para o funcionario.\n\n${error.message || error}\n\nTente de novo com a internet ligada.`);
+    return;
   }
 
   if (taskId.value) {
@@ -875,6 +887,21 @@ function clearForm() {
     employee.value = currentUser.name;
   }
   title.focus();
+}
+
+function updateInstructionFileStatus() {
+  const hasAudio = Boolean(taskInstructionAudio.files?.length);
+  const hasVideo = Boolean(taskInstructionVideo.files?.length);
+
+  if (hasAudio && hasVideo) {
+    instructionRecordingStatus.textContent = 'Audio e video selecionados. Salve a tarefa para enviar ao funcionario.';
+  } else if (hasAudio) {
+    instructionRecordingStatus.textContent = 'Audio selecionado. Salve a tarefa para enviar ao funcionario.';
+  } else if (hasVideo) {
+    instructionRecordingStatus.textContent = 'Video selecionado. Salve a tarefa para enviar ao funcionario.';
+  } else if (!recordedInstructionAudioFile) {
+    instructionRecordingStatus.textContent = 'Nenhum audio gravado.';
+  }
 }
 
 async function startInstructionAudioRecording() {
@@ -1014,7 +1041,7 @@ async function render() {
       missingBox.textContent = `Falta: ${missing.join(', ')}`;
       summary.after(missingBox);
     }
-    card.querySelector('.cloud-btn').disabled = !hasAnyEvidence(task);
+    card.querySelector('.cloud-btn').disabled = !hasAnyEvidence(task) && !hasInstructionMedia(task);
 
     const badge = card.querySelector('.priority-badge');
     badge.textContent = task.priority;
@@ -1677,6 +1704,9 @@ async function saveEvidenceFile(taskIdValue, stageKey, kind, file) {
 async function saveInstructionMediaFile(task, file, kind) {
   const id = crypto.randomUUID();
   const cloud = await uploadEvidenceFileToCloud(task, file, 'instrucao', kind, id);
+  if (supabaseClient && !cloud.path) {
+    throw new Error('O arquivo foi gravado no aparelho, mas nao subiu para a nuvem.');
+  }
 
   await putMedia({
     id,
@@ -1947,8 +1977,8 @@ async function uploadEvidenceToCloud(id) {
     return;
   }
 
-  if (!hasAnyEvidence(task)) {
-    alert('Ainda nao existem fotos ou videos nesta tarefa.');
+  if (!hasAnyEvidence(task) && !hasInstructionMedia(task)) {
+    alert('Ainda nao existem fotos, videos ou instrucao nesta tarefa.');
     return;
   }
 
@@ -1967,10 +1997,15 @@ async function uploadEvidenceToCloud(id) {
       if (!mediaId || cloudPath) continue;
 
       const record = await getMedia(mediaId);
-      if (!record?.blob) continue;
+      if (!record?.blob) {
+        throw new Error('Nao encontrei o arquivo da instrucao neste aparelho. Grave ou escolha o audio novamente e salve a tarefa.');
+      }
 
       const file = new File([record.blob], record.name || `instrucao-${kind}`, { type: record.type || record.blob.type });
       const cloud = await uploadEvidenceFileToCloud(updatedTask, file, 'instrucao', kind, mediaId);
+      if (!cloud.path) {
+        throw new Error('A instrucao nao subiu para a nuvem. Verifique a internet e tente sincronizar de novo.');
+      }
       updatedTask = {
         ...updatedTask,
         instructionMedia: {
@@ -2162,6 +2197,11 @@ function hasAnyEvidence(task) {
     const item = task.evidence[stage.key];
     return item?.photoId || item?.videoId;
   }) || Boolean(task.extraEvidence?.length);
+}
+
+function hasInstructionMedia(task) {
+  const media = task.instructionMedia || {};
+  return Boolean(media.audioId || media.audioCloudPath || media.videoId || media.videoCloudPath);
 }
 
 function stageStatus(data) {
