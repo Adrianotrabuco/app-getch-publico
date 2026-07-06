@@ -3,7 +3,7 @@ const oldStorageKey = 'gtech-tarefas-obras-v1';
 const inventoryStorageKey = 'gtech-inventario-v1';
 const dbName = 'gtech-tarefas-obras-arquivos';
 const dbStore = 'midias';
-const appVersion = '24-tarefa-audio-video';
+const appVersion = '25-gravador-audio-tarefa';
 const sessionKey = 'gtech-sessao-v1';
 const cloudTasksTable = 'tarefas_obras';
 const cloudUsersTable = 'usuarios_app';
@@ -58,6 +58,9 @@ let mediaUrls = [];
 let currentUser = loadSession();
 let knownAssignedTaskIds = new Set();
 let syncTimer = null;
+let instructionRecorder = null;
+let instructionAudioChunks = [];
+let recordedInstructionAudioFile = null;
 
 const loginScreen = document.querySelector('#loginScreen');
 const loginForm = document.querySelector('#loginForm');
@@ -74,6 +77,9 @@ const priority = document.querySelector('#priority');
 const notes = document.querySelector('#notes');
 const taskInstructionAudio = document.querySelector('#taskInstructionAudio');
 const taskInstructionVideo = document.querySelector('#taskInstructionVideo');
+const recordInstructionAudioBtn = document.querySelector('#recordInstructionAudioBtn');
+const stopInstructionAudioBtn = document.querySelector('#stopInstructionAudioBtn');
+const instructionRecordingStatus = document.querySelector('#instructionRecordingStatus');
 const taskList = document.querySelector('#taskList');
 const statsGrid = document.querySelector('#statsGrid');
 const searchInput = document.querySelector('#searchInput');
@@ -122,6 +128,8 @@ form.addEventListener('submit', saveTask);
 userForm.addEventListener('submit', saveUser);
 inventoryForm.addEventListener('submit', saveInventoryItem);
 clearBtn.addEventListener('click', clearForm);
+recordInstructionAudioBtn.addEventListener('click', startInstructionAudioRecording);
+stopInstructionAudioBtn.addEventListener('click', stopInstructionAudioRecording);
 clearInventoryBtn.addEventListener('click', clearInventoryForm);
 searchInput.addEventListener('input', render);
 inventorySearchInput.addEventListener('input', renderInventory);
@@ -756,8 +764,9 @@ async function saveTask(event) {
     createdAt: existing ? existing.createdAt : new Date().toISOString()
   };
 
-  if (taskInstructionAudio.files?.[0]) {
-    payload.instructionMedia = await saveInstructionMediaFile(payload, taskInstructionAudio.files[0], 'audio');
+  const audioFile = recordedInstructionAudioFile || taskInstructionAudio.files?.[0];
+  if (audioFile) {
+    payload.instructionMedia = await saveInstructionMediaFile(payload, audioFile, 'audio');
   }
 
   if (taskInstructionVideo.files?.[0]) {
@@ -859,11 +868,56 @@ function clearForm() {
   taskId.value = '';
   taskInstructionAudio.value = '';
   taskInstructionVideo.value = '';
+  recordedInstructionAudioFile = null;
+  instructionRecordingStatus.textContent = 'Nenhum audio gravado.';
   saveBtn.textContent = 'Salvar tarefa';
   if (currentUser?.role === 'funcionario') {
     employee.value = currentUser.name;
   }
   title.focus();
+}
+
+async function startInstructionAudioRecording() {
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+    alert('Este celular nao permite gravar audio direto pelo navegador. Use a opcao "Escolher audio".');
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    instructionAudioChunks = [];
+    instructionRecorder = new MediaRecorder(stream);
+
+    instructionRecorder.addEventListener('dataavailable', (event) => {
+      if (event.data?.size) instructionAudioChunks.push(event.data);
+    });
+
+    instructionRecorder.addEventListener('stop', () => {
+      const type = instructionRecorder.mimeType || 'audio/webm';
+      const blob = new Blob(instructionAudioChunks, { type });
+      const extension = type.includes('mp4') || type.includes('aac') ? 'm4a' : 'webm';
+      recordedInstructionAudioFile = new File([blob], `instrucao-audio-${Date.now()}.${extension}`, { type });
+      stream.getTracks().forEach((track) => track.stop());
+      instructionRecordingStatus.textContent = 'Audio gravado. Salve a tarefa para enviar ao funcionario.';
+      recordInstructionAudioBtn.disabled = false;
+      stopInstructionAudioBtn.disabled = true;
+    });
+
+    instructionRecorder.start();
+    recordedInstructionAudioFile = null;
+    instructionRecordingStatus.textContent = 'Gravando audio... toque em Parar ao terminar.';
+    recordInstructionAudioBtn.disabled = true;
+    stopInstructionAudioBtn.disabled = false;
+  } catch (error) {
+    alert('Nao foi possivel acessar o microfone. Verifique a permissao do navegador.');
+    console.warn('Falha ao gravar audio', error);
+  }
+}
+
+function stopInstructionAudioRecording() {
+  if (instructionRecorder && instructionRecorder.state !== 'inactive') {
+    instructionRecorder.stop();
+  }
 }
 
 function clearInventoryForm() {
