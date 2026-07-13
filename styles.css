@@ -1236,6 +1236,8 @@ textarea:focus {
 }
 
 .delete-btn {
+  border-color: rgba(178, 47, 47, 0.35);
+  background: #fff8f8;
   color: var(--danger);
 }
 

@@ -3,7 +3,7 @@ const oldStorageKey = 'gtech-tarefas-obras-v1';
 const inventoryStorageKey = 'gtech-inventario-v1';
 const dbName = 'gtech-tarefas-obras-arquivos';
 const dbStore = 'midias';
-const appVersion = '26-audio-instrucao-nuvem';
+const appVersion = '27-botoes-editar-excluir';
 const sessionKey = 'gtech-sessao-v1';
 const cloudTasksTable = 'tarefas_obras';
 const cloudUsersTable = 'usuarios_app';
@@ -1300,7 +1300,7 @@ function renderInventoryCard(item) {
           <button class="text-action" type="button" data-inventory-check="${escapeHtml(item.id)}">Conferir</button>
           <button class="text-action" type="button" data-inventory-history="${escapeHtml(item.id)}">Historico</button>
           <button class="text-action" type="button" data-inventory-edit="${escapeHtml(item.id)}">Editar</button>
-          <button class="small delete-btn" type="button" data-inventory-delete="${escapeHtml(item.id)}" title="Excluir item" aria-label="Excluir item">X</button>
+          <button class="text-action delete-btn" type="button" data-inventory-delete="${escapeHtml(item.id)}" title="Excluir item" aria-label="Excluir item">Excluir item</button>
         ` : ''}
       </div>
     </article>
