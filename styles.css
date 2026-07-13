@@ -1,15 +1,19 @@
 :root {
   color-scheme: light;
-  --bg: #f4f6f7;
+  --bg: #eef2f4;
+  --bg-soft: #f8fafb;
   --panel: #ffffff;
   --ink: #17212b;
   --muted: #66717d;
   --line: #d9e0e5;
   --brand: #116149;
   --brand-dark: #0a4535;
+  --brand-soft: #e9f5f0;
   --accent: #f2b544;
   --danger: #b42318;
-  --shadow: 0 16px 34px rgba(18, 33, 43, 0.10);
+  --radius: 8px;
+  --shadow: 0 14px 30px rgba(18, 33, 43, 0.09);
+  --shadow-soft: 0 8px 18px rgba(18, 33, 43, 0.06);
 }
 
 * {
@@ -23,7 +27,9 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--bg);
+  background:
+    linear-gradient(180deg, #f8fafb 0, var(--bg) 340px),
+    var(--bg);
   color: var(--ink);
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -63,7 +69,8 @@ button:disabled {
   display: grid;
   gap: 14px;
   width: min(100%, 380px);
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius);
   background: #ffffff;
   padding: 24px;
   box-shadow: var(--shadow);
@@ -150,7 +157,7 @@ button:disabled {
   justify-content: space-between;
   gap: 20px;
   padding: 18px clamp(16px, 4vw, 48px);
-  background: linear-gradient(90deg, #17212b 0%, #1d2b3c 58%, #0f3f34 100%);
+  background: #17212b;
   color: #ffffff;
   border-bottom: 4px solid var(--accent);
 }
@@ -193,7 +200,7 @@ h1 {
   min-width: 42px;
   height: 42px;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.09);
   color: #ffffff;
   padding: 0 14px;
@@ -204,7 +211,7 @@ h1 {
 
 .top-actions .icon-button {
   min-width: 86px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.11);
 }
 
 .top-actions .icon-button:hover {
@@ -225,7 +232,7 @@ h1 {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+  grid-template-columns: minmax(310px, 400px) minmax(0, 1fr);
   gap: 22px;
   padding: 22px clamp(16px, 4vw, 48px) 42px;
 }
@@ -234,7 +241,7 @@ h1 {
 .toolbar {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
 
@@ -244,7 +251,7 @@ h1 {
   top: 18px;
   max-height: calc(100vh - 36px);
   overflow: auto;
-  padding: 20px;
+  padding: 18px;
 }
 
 .is-funcionario .task-form-panel {
@@ -275,8 +282,8 @@ h1 {
   display: grid;
   gap: 10px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #f7faf9;
+  border-radius: var(--radius);
+  background: var(--bg-soft);
   padding: 12px;
 }
 
@@ -372,10 +379,10 @@ select,
 textarea {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #ffffff;
   color: var(--ink);
-  padding: 11px 12px;
+  padding: 12px;
   outline: none;
 }
 
@@ -407,14 +414,16 @@ textarea:focus {
 .secondary,
 .filter {
   border: 0;
-  border-radius: 8px;
-  padding: 11px 14px;
+  border-radius: var(--radius);
+  padding: 12px 14px;
   font-weight: 800;
 }
 
 .primary {
+  border: 1px solid var(--brand);
   background: var(--brand);
   color: #ffffff;
+  box-shadow: 0 8px 16px rgba(17, 97, 73, 0.16);
 }
 
 .primary:hover {
@@ -423,7 +432,8 @@ textarea:focus {
 
 .secondary,
 .filter {
-  background: #e8edf0;
+  border: 1px solid var(--line);
+  background: #ffffff;
   color: var(--ink);
 }
 
@@ -442,9 +452,10 @@ textarea:focus {
 .stat {
   min-height: 86px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #ffffff;
   padding: 14px;
+  box-shadow: var(--shadow-soft);
 }
 
 .stat strong {
@@ -465,6 +476,9 @@ textarea:focus {
   gap: 14px;
   align-items: end;
   padding: 14px;
+  position: sticky;
+  top: 12px;
+  z-index: 6;
 }
 
 .filters {
@@ -475,16 +489,17 @@ textarea:focus {
 
 .filter.active {
   background: var(--brand);
+  border-color: var(--brand);
   color: #ffffff;
 }
 
 .refresh-button {
   align-self: end;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #ffffff;
   color: var(--brand-dark);
-  padding: 11px 14px;
+  padding: 12px 14px;
   font-weight: 900;
   white-space: nowrap;
 }
@@ -512,7 +527,7 @@ textarea:focus {
   justify-content: space-between;
   gap: 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #ffffff;
   padding: 14px;
   box-shadow: var(--shadow);
@@ -553,7 +568,7 @@ textarea:focus {
   align-items: center;
   min-height: 42px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #ffffff;
   color: var(--brand-dark);
   padding: 0 10px;
@@ -568,7 +583,7 @@ textarea:focus {
 
 .inventory-result-count {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #ffffff;
   color: var(--muted);
   padding: 10px 12px;
@@ -580,8 +595,8 @@ textarea:focus {
   display: grid;
   gap: 8px;
   border: 1px solid rgba(17, 97, 73, 0.24);
-  border-radius: 8px;
-  background: #eef6f3;
+  border-radius: var(--radius);
+  background: var(--brand-soft);
   padding: 12px;
 }
 
@@ -606,7 +621,7 @@ textarea:focus {
 }
 
 .inventory-summary-row {
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #ffffff;
   padding: 9px 10px;
 }
@@ -626,9 +641,10 @@ textarea:focus {
   display: grid;
   gap: 10px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #ffffff;
   padding: 14px;
+  box-shadow: var(--shadow-soft);
 }
 
 .inventory-group-heading {
@@ -659,14 +675,15 @@ textarea:focus {
   display: grid;
   gap: 10px;
   border: 1px solid var(--line);
-  border-left: 5px solid var(--brand);
-  border-radius: 8px;
-  background: #fdfefe;
-  padding: 12px;
+  border-top: 4px solid var(--brand);
+  border-radius: var(--radius);
+  background: #ffffff;
+  padding: 14px;
+  box-shadow: 0 6px 14px rgba(18, 33, 43, 0.05);
 }
 
 .inventory-card.low-stock {
-  border-left-color: var(--accent);
+  border-top-color: var(--accent);
   background: #fffaf0;
 }
 
@@ -733,7 +750,7 @@ textarea:focus {
 
 .inventory-alert {
   border: 1px solid #f4d49b;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #fff7e6;
   color: #7a4b00;
   padding: 8px 10px;
@@ -742,7 +759,7 @@ textarea:focus {
 }
 
 .inventory-move-note {
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #eef6f3;
   color: var(--brand-dark);
   padding: 8px 10px;
@@ -752,7 +769,7 @@ textarea:focus {
 }
 
 .inventory-check-note {
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #f1f5f9;
   color: #334155;
   padding: 8px 10px;
@@ -768,22 +785,22 @@ textarea:focus {
 
 .task-card {
   display: grid;
-  gap: 12px;
+  gap: 14px;
   border: 1px solid var(--line);
-  border-left: 5px solid var(--brand);
-  border-radius: 8px;
+  border-top: 5px solid var(--brand);
+  border-radius: var(--radius);
   background: #ffffff;
   padding: 16px;
-  box-shadow: 0 10px 20px rgba(18, 33, 43, 0.06);
+  box-shadow: var(--shadow-soft);
 }
 
 .task-card.status-concluida {
-  border-left-color: #64748b;
+  border-top-color: #64748b;
   opacity: 0.78;
 }
 
 .task-card.status-ajuste {
-  border-left-color: var(--danger);
+  border-top-color: var(--danger);
 }
 
 .task-card.status-conferida {
@@ -791,11 +808,11 @@ textarea:focus {
 }
 
 .task-card.priority-urgente {
-  border-left-color: var(--danger);
+  border-top-color: var(--danger);
 }
 
 .task-card.priority-alta {
-  border-left-color: var(--accent);
+  border-top-color: var(--accent);
 }
 
 .task-main,
@@ -804,6 +821,11 @@ textarea:focus {
   justify-content: space-between;
   gap: 12px;
   align-items: flex-start;
+}
+
+.task-main {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
 }
 
 .task-meta,
@@ -815,7 +837,7 @@ textarea:focus {
 
 .task-card h3 {
   margin: 5px 0 0;
-  font-size: 1.12rem;
+  font-size: 1.18rem;
   line-height: 1.28;
 }
 
@@ -847,8 +869,8 @@ textarea:focus {
 }
 
 .evidence-summary {
-  border-radius: 8px;
-  background: #eef6f3;
+  border-radius: var(--radius);
+  background: var(--brand-soft);
   color: var(--brand-dark);
   padding: 10px 12px;
   font-size: 0.9rem;
@@ -866,7 +888,7 @@ textarea:focus {
 }
 
 .missing-list {
-  border-radius: 8px;
+  border-radius: var(--radius);
   border: 1px solid #f4d49b;
   background: #fffaf0;
   color: #7a4b00;
@@ -886,8 +908,8 @@ textarea:focus {
   display: grid;
   gap: 10px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fafafa;
+  border-radius: var(--radius);
+  background: var(--bg-soft);
   padding: 10px;
 }
 
@@ -923,7 +945,7 @@ textarea:focus {
   min-height: 126px;
   overflow: hidden;
   border: 1px dashed #b9c3ca;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #ffffff;
   color: var(--muted);
   text-align: center;
@@ -953,8 +975,8 @@ textarea:focus {
   display: grid;
   gap: 10px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #f7faf9;
+  border-radius: var(--radius);
+  background: var(--bg-soft);
   padding: 12px;
 }
 
@@ -1002,7 +1024,7 @@ textarea:focus {
   min-height: 118px;
   overflow: hidden;
   border: 1px dashed #b9c3ca;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #ffffff;
   color: var(--muted);
   text-align: center;
@@ -1095,7 +1117,7 @@ textarea:focus {
   gap: 10px;
   width: min(100%, 920px);
   max-height: 92vh;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #111827;
   padding: 10px;
 }
@@ -1140,7 +1162,7 @@ textarea:focus {
 
 .execution-field {
   border: 1px solid #f4d49b;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #fffaf0;
   padding: 12px;
 }
@@ -1166,7 +1188,7 @@ textarea:focus {
   align-items: center;
   justify-content: center;
   min-height: 38px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--brand);
   color: #ffffff;
   font-size: 0.84rem;
@@ -1191,7 +1213,7 @@ textarea:focus {
   align-items: center;
   min-height: 38px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #ffffff;
   color: var(--brand-dark);
   padding: 0 10px;
@@ -1214,12 +1236,19 @@ textarea:focus {
 .text-action {
   min-height: 38px;
   border: 1px solid var(--brand);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #ffffff;
   color: var(--brand-dark);
   padding: 0 12px;
   font-size: 0.84rem;
   font-weight: 900;
+}
+
+.text-action:hover,
+.secondary:hover,
+.filter:hover {
+  background: var(--brand-soft);
+  border-color: rgba(17, 97, 73, 0.35);
 }
 
 .text-action:disabled {
@@ -1241,9 +1270,14 @@ textarea:focus {
   color: var(--danger);
 }
 
+.delete-btn:hover {
+  border-color: rgba(178, 47, 47, 0.55);
+  background: #fee4e2;
+}
+
 .empty {
   border: 1px dashed #b9c3ca;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #ffffff;
   padding: 28px;
   color: var(--muted);
