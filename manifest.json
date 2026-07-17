@@ -1,15 +1,15 @@
 {
   "name": "Getch Servicos - Tarefas de Obras",
   "short_name": "Getch Obras",
-  "id": "/",
-  "start_url": "./index.html",
-  "scope": "./",
+  "id": "/app-getch-publico/",
+  "start_url": "/app-getch-publico/",
+  "scope": "/app-getch-publico/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#f4f6f7",
   "theme_color": "#17212b",
-  "description": "App para tarefas de obras com fotos e videos de inicio, meio e fim.",
+  "description": "App para tarefas de obras com fotos e videos de inicio e fim.",
   "categories": ["business", "productivity"],
   "icons": [
     {
