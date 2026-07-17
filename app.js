@@ -3,7 +3,7 @@ const oldStorageKey = 'gtech-tarefas-obras-v1';
 const inventoryStorageKey = 'gtech-inventario-v1';
 const dbName = 'gtech-tarefas-obras-arquivos';
 const dbStore = 'midias';
-const appVersion = '28-melhoria-visual';
+const appVersion = '29-pins-funcionarios';
 const sessionKey = 'gtech-sessao-v1';
 const cloudTasksTable = 'tarefas_obras';
 const cloudUsersTable = 'usuarios_app';
@@ -20,11 +20,11 @@ const responsibleName = 'Adriano';
 const responsibleWhatsApp = '5519997418514';
 const responsiblePhoneLabel = '19 99741-8514';
 const defaultUsers = {
-  Fabio: { pin: '4444', role: 'responsavel', label: 'Fabio - Diretor' },
+  Fabio: { pin: '4017', role: 'responsavel', label: 'Fabio - Diretor' },
   Adriano: { pin: '8514', role: 'responsavel', label: 'Adriano - T-I' },
-  Allan: { pin: '1111', role: 'funcionario', label: 'Allan' },
-  Tito: { pin: '2222', role: 'funcionario', label: 'Tito' },
-  Mateus: { pin: '3333', role: 'funcionario', label: 'Mateus' }
+  Allan: { pin: '0271', role: 'funcionario', label: 'Allan' },
+  Tito: { pin: '6755', role: 'funcionario', label: 'Tito' },
+  Mateus: { pin: '1872', role: 'funcionario', label: 'Mateus' }
 };
 let users = loadUsers();
 const supabaseConfig = window.GTECH_SUPABASE || {};
