@@ -3,7 +3,7 @@ const oldStorageKey = 'gtech-tarefas-obras-v1';
 const inventoryStorageKey = 'gtech-inventario-v1';
 const dbName = 'gtech-tarefas-obras-arquivos';
 const dbStore = 'midias';
-const appVersion = '29-pins-funcionarios';
+const appVersion = '30-evidencias-inicio-fim';
 const sessionKey = 'gtech-sessao-v1';
 const cloudTasksTable = 'tarefas_obras';
 const cloudUsersTable = 'usuarios_app';
@@ -12,7 +12,6 @@ const usersStorageKey = 'gtech-usuarios-v1';
 
 const stages = [
   { key: 'inicio', label: 'Inicio' },
-  { key: 'meio', label: 'Meio' },
   { key: 'fim', label: 'Fim' }
 ];
 
@@ -1299,7 +1298,7 @@ function renderInventoryCard(item) {
           <button class="text-action" type="button" data-inventory-move="${escapeHtml(item.id)}">Transferir</button>
           <button class="text-action" type="button" data-inventory-check="${escapeHtml(item.id)}">Conferir</button>
           <button class="text-action" type="button" data-inventory-history="${escapeHtml(item.id)}">Historico</button>
-          <button class="text-action" type="button" data-inventory-edit="${escapeHtml(item.id)}">Editar</button>
+          <button class="text-action edit-btn" type="button" data-inventory-edit="${escapeHtml(item.id)}">Editar</button>
           <button class="text-action delete-btn" type="button" data-inventory-delete="${escapeHtml(item.id)}" title="Excluir item" aria-label="Excluir item">Excluir item</button>
         ` : ''}
       </div>

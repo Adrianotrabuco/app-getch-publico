@@ -1256,6 +1256,17 @@ textarea:focus {
   color: var(--muted);
 }
 
+.edit-btn {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.edit-btn:hover {
+  border-color: #1d4ed8;
+  background: #1d4ed8;
+}
+
 .small {
   width: 38px;
   height: 38px;
@@ -1265,14 +1276,14 @@ textarea:focus {
 }
 
 .delete-btn {
-  border-color: rgba(178, 47, 47, 0.35);
-  background: #fff8f8;
-  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #ffffff;
 }
 
 .delete-btn:hover {
-  border-color: rgba(178, 47, 47, 0.55);
-  background: #fee4e2;
+  border-color: #8f1d14;
+  background: #8f1d14;
 }
 
 .empty {
