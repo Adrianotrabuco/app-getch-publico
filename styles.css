@@ -403,6 +403,23 @@ textarea:focus {
   gap: 12px;
 }
 
+.all-employees-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  border: 1px solid rgba(37, 99, 235, 0.28);
+  border-radius: var(--radius);
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 0 12px;
+  font-weight: 900;
+}
+
+.all-employees-toggle input {
+  width: auto;
+  margin: 0;
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;

@@ -1,4 +1,4 @@
-const cacheName = 'gtech-obras-v30';
+const cacheName = 'gtech-obras-v31';
 const filesToCache = [
   './',
   './index.html',

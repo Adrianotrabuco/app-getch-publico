@@ -3,7 +3,7 @@ const oldStorageKey = 'gtech-tarefas-obras-v1';
 const inventoryStorageKey = 'gtech-inventario-v1';
 const dbName = 'gtech-tarefas-obras-arquivos';
 const dbStore = 'midias';
-const appVersion = '30-evidencias-inicio-fim';
+const appVersion = '31-tarefa-para-todos';
 const sessionKey = 'gtech-sessao-v1';
 const cloudTasksTable = 'tarefas_obras';
 const cloudUsersTable = 'usuarios_app';
@@ -18,6 +18,7 @@ const stages = [
 const responsibleName = 'Adriano';
 const responsibleWhatsApp = '5519997418514';
 const responsiblePhoneLabel = '19 99741-8514';
+const allEmployeesValue = 'Todos os funcionarios';
 const defaultUsers = {
   Fabio: { pin: '4017', role: 'responsavel', label: 'Fabio - Diretor' },
   Adriano: { pin: '8514', role: 'responsavel', label: 'Adriano - T-I' },
@@ -69,6 +70,7 @@ const form = document.querySelector('#taskForm');
 const taskId = document.querySelector('#taskId');
 const title = document.querySelector('#title');
 const employee = document.querySelector('#employee');
+const allEmployeesToggle = document.querySelector('#allEmployeesToggle');
 const site = document.querySelector('#site');
 const locationInput = document.querySelector('#location');
 const dueDate = document.querySelector('#dueDate');
@@ -127,6 +129,7 @@ form.addEventListener('submit', saveTask);
 userForm.addEventListener('submit', saveUser);
 inventoryForm.addEventListener('submit', saveInventoryItem);
 clearBtn.addEventListener('click', clearForm);
+allEmployeesToggle.addEventListener('change', updateAllEmployeesToggle);
 recordInstructionAudioBtn.addEventListener('click', startInstructionAudioRecording);
 stopInstructionAudioBtn.addEventListener('click', stopInstructionAudioRecording);
 taskInstructionAudio.addEventListener('change', updateInstructionFileStatus);
@@ -641,8 +644,12 @@ function rowToTask(row) {
 function getVisibleTasks() {
   if (!currentUser) return [];
   return currentUser.role === 'funcionario'
-    ? tasks.filter((task) => task.employee === currentUser.name)
+    ? tasks.filter((task) => task.employee === currentUser.name || isAllEmployeesTask(task))
     : tasks;
+}
+
+function isAllEmployeesTask(task) {
+  return task?.employee === allEmployeesValue || task?.employee === 'Todos';
 }
 
 function requestNotificationPermission() {
@@ -753,7 +760,9 @@ async function saveTask(event) {
   const payload = {
     id: taskId.value || crypto.randomUUID(),
     title: title.value.trim(),
-    employee: currentUser?.role === 'funcionario' ? currentUser.name : employee.value.trim(),
+    employee: currentUser?.role === 'funcionario'
+      ? currentUser.name
+      : allEmployeesToggle.checked ? allEmployeesValue : employee.value.trim(),
     site: site.value.trim(),
     location: locationInput.value.trim(),
     dueDate: dueDate.value,
@@ -877,6 +886,8 @@ async function saveInventoryItem(event) {
 function clearForm() {
   form.reset();
   taskId.value = '';
+  allEmployeesToggle.checked = false;
+  updateAllEmployeesToggle();
   taskInstructionAudio.value = '';
   taskInstructionVideo.value = '';
   recordedInstructionAudioFile = null;
@@ -886,6 +897,25 @@ function clearForm() {
     employee.value = currentUser.name;
   }
   title.focus();
+}
+
+function updateAllEmployeesToggle() {
+  if (allEmployeesToggle.checked) {
+    employee.value = allEmployeesValue;
+    employee.setAttribute('readonly', 'readonly');
+    return;
+  }
+
+  if (employee.value === allEmployeesValue) {
+    employee.value = '';
+  }
+
+  if (currentUser?.role === 'funcionario') {
+    employee.value = currentUser.name;
+    employee.setAttribute('readonly', 'readonly');
+  } else {
+    employee.removeAttribute('readonly');
+  }
 }
 
 function updateInstructionFileStatus() {
@@ -994,7 +1024,7 @@ async function render() {
   const term = searchInput.value.trim().toLowerCase();
   const filtered = tasks.filter((task) => {
     const matchesFilter = activeFilter === 'Todas' || task.status === activeFilter;
-    const matchesUser = currentUser.role === 'responsavel' || task.employee === currentUser.name;
+    const matchesUser = currentUser.role === 'responsavel' || task.employee === currentUser.name || isAllEmployeesTask(task);
     const searchable = [
       task.title,
       task.employee,
@@ -2220,7 +2250,7 @@ function buildInfoLine(task) {
 
 function renderStats() {
   const visibleTasks = currentUser?.role === 'funcionario'
-    ? tasks.filter((task) => task.employee === currentUser.name)
+    ? tasks.filter((task) => task.employee === currentUser.name || isAllEmployeesTask(task))
     : tasks;
   const total = visibleTasks.length;
   const pending = visibleTasks.filter((task) => task.status === 'Pendente').length;
@@ -2640,6 +2670,8 @@ function editTask(id) {
   taskId.value = task.id;
   title.value = task.title;
   employee.value = task.employee;
+  allEmployeesToggle.checked = isAllEmployeesTask(task);
+  updateAllEmployeesToggle();
   site.value = task.site;
   locationInput.value = task.location;
   dueDate.value = task.dueDate;
