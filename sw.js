@@ -1,4 +1,4 @@
-const cacheName = 'gtech-obras-v31';
+const cacheName = 'gtech-obras-v32';
 const filesToCache = [
   './',
   './index.html',
@@ -29,6 +29,11 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') {
+    return;
+  }
+
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request));
     return;
   }
 
